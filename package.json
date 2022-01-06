@@ -5,8 +5,10 @@
   "main": "index.js",
   "scripts": {
     "lint": "tslint -p tsconfig.json -c tslint.json",
-    "local": "serverless offline",
-    "deploy": "serverless deploy",
+    "sls:local": "serverless offline",
+    "sls:deploy": "serverless deploy",
+    "sls:package": "serverless package",
+    "sls:undeploy": "serverless remove",
     "test": "cross-env NODE_ENV=dev mocha -r ts-node/register tests/*.test.ts --exit",
     "coverage": "nyc --reporter lcov npm run test"
   },
@@ -17,6 +19,7 @@
     "@types/jsonwebtoken": "^8.5.6",
     "dotenv": "^8.2.0",
     "jsonwebtoken": "^8.5.1",
+    "jwks-rsa": "^2.0.5",
     "mongoose": "^5.9.10"
   },
   "devDependencies": {
@@ -34,6 +37,7 @@
     "lambda-tester": "^4.0.1",
     "mocha": "^7.1.2",
     "nyc": "^15.0.1",
+    "serverless-dotenv-plugin": "^3.12.2",
     "serverless-offline": "^5.12.1",
     "serverless-plugin-typescript": "^1.1.9",
     "sinon": "^9.0.2",
