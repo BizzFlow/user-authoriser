@@ -32,8 +32,60 @@ package:
     - config/.env.dev
 
 functions:
-  jwtAuth:
+  authorizer:
     handler: src/handler.jwtAuth
     tags:
           application: ${self:custom.application}
           service: ${self:service}
+
+
+resources:
+  Resources:
+    ApiGateway:
+      Type: AWS::ApiGateway::RestApi
+      Properties:
+        Name: ApiGateway
+
+  Outputs:
+    ApiGatewayRestApiId:
+      Value:
+        Ref: ApiGateway
+      Export:
+        Name: api-gateway:${opt:stage, self:provider.stage}:rest-api-id
+    ApiGatewayRestApiRootResourceId:
+      Value:
+        Fn::GetAtt:
+          - ApiGateway
+          - RootResourceId
+      Export:
+        Name: api-gateway:${opt:stage, self:provider.stage}:root-resource-id
+
+    Authorizer:
+      Type: AWS::ApiGateway::Authorizer
+      Properties:
+        Name: Authorizer
+        Type: REQUEST
+        AuthorizerUri:
+          Fn::Join: [ "",
+            [
+              "arn:aws:apigateway:",
+              "${self:custom.region}",
+              ":lambda:path/",
+              "2015-03-31/functions/",
+              Fn::GetAtt: ["AuthorizerLambdaFunction", "Arn" ],
+              "/invocations"
+            ]]
+        RestApiId:
+          Fn::ImportValue: api-gateway:${opt:stage, self:provider.stage}:rest-api-id
+    apiGatewayLambdaPermissions:
+      Type: AWS::Lambda::Permission
+      Properties:
+        FunctionName:
+          Fn::GetAtt: [ AuthorizerLambdaFunction, Arn]
+        Action: lambda:InvokeFunction
+        Principal:
+          Fn::Join: [ "",
+            [
+              "apigateway.",
+              Ref: AWS::URLSuffix
+            ]]
