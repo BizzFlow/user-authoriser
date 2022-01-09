@@ -10,6 +10,8 @@ provider:
   name: aws
   runtime: nodejs14.x
   lambdaHashingVersion: 20201221
+  stackName: ${self:service}-${opt:stage, self:provider.stage}-stack 
+  apiName: ${self:service}-${opt:stage, self:provider.stage}-api 
 
   stage: dev
   region: eu-central-1
@@ -18,6 +20,7 @@ provider:
     NODE_ENV: dev
     SYSTEM: ${self:service}-${opt:stage, self:provider.stage}
     USERS_TABLE: users-${opt:stage, self:provider.stage}
+    API_GATEWAY: ${self:custom.application}-ApiGW
 
 plugins:
   - serverless-plugin-typescript 
@@ -32,60 +35,22 @@ package:
     - config/.env.dev
 
 functions:
-  authorizer:
+  basicUserAuthorizer:
     handler: src/handler.jwtAuth
     tags:
           application: ${self:custom.application}
           service: ${self:service}
 
-
 resources:
   Resources:
-    ApiGateway:
+    BizzFlowApiGW:
       Type: AWS::ApiGateway::RestApi
       Properties:
-        Name: ApiGateway
+        Name: BizzFlowApiGW
 
   Outputs:
     ApiGatewayRestApiId:
       Value:
-        Ref: ApiGateway
+        Ref: BizzFlowApiGW
       Export:
-        Name: api-gateway:${opt:stage, self:provider.stage}:rest-api-id
-    ApiGatewayRestApiRootResourceId:
-      Value:
-        Fn::GetAtt:
-          - ApiGateway
-          - RootResourceId
-      Export:
-        Name: api-gateway:${opt:stage, self:provider.stage}:root-resource-id
-
-    Authorizer:
-      Type: AWS::ApiGateway::Authorizer
-      Properties:
-        Name: Authorizer
-        Type: REQUEST
-        AuthorizerUri:
-          Fn::Join: [ "",
-            [
-              "arn:aws:apigateway:",
-              "${self:custom.region}",
-              ":lambda:path/",
-              "2015-03-31/functions/",
-              Fn::GetAtt: ["AuthorizerLambdaFunction", "Arn" ],
-              "/invocations"
-            ]]
-        RestApiId:
-          Fn::ImportValue: api-gateway:${opt:stage, self:provider.stage}:rest-api-id
-    apiGatewayLambdaPermissions:
-      Type: AWS::Lambda::Permission
-      Properties:
-        FunctionName:
-          Fn::GetAtt: [ AuthorizerLambdaFunction, Arn]
-        Action: lambda:InvokeFunction
-        Principal:
-          Fn::Join: [ "",
-            [
-              "apigateway.",
-              Ref: AWS::URLSuffix
-            ]]
+        Name: BizzFlowApiGateway-restApiId-${opt:stage, self:provider.stage}

@@ -10,3 +10,5 @@ serverless config credentials --provider aws --key <KEY> --secret <SECRET>
 https://stackoverflow.com/questions/53302266/shared-lambda-authorizer-setup-in-serverless-framework
 
 https://dev.to/jcts3/importing-exporting-serverless-custom-authorizers-across-services-1gfj
+
+https://www.serverless.com/framework/docs/providers/aws/events/apigateway#share-authorizer
