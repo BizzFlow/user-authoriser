@@ -5,6 +5,11 @@ description: BizzFlow Lambda authorizer
 
 custom:
   application: BizzFlow
+  customDomain:
+      domainName: auth.bizzflow.link
+      basePath: ${opt:stage, self:provider.stage}
+      stage: ${self:provider.stage}
+      createRoute53Record: true
 
 provider:
   name: aws
@@ -22,10 +27,18 @@ provider:
     USERS_TABLE: users-${opt:stage, self:provider.stage}
     API_GATEWAY: ${self:custom.application}-ApiGW
 
+  stackTags:
+    service: ${self:service}
+    application: ${self:custom.application}
+  tags:
+    application: ${self:custom.application}
+    service: ${self:service}
+    
 plugins:
   - serverless-plugin-typescript 
   - serverless-offline
   - serverless-dotenv-plugin
+  - serverless-domain-manager
 
 package:
   exclude:
@@ -37,9 +50,24 @@ package:
 functions:
   basicUserAuthorizer:
     handler: src/handler.jwtAuth
-    tags:
-          application: ${self:custom.application}
-          service: ${self:service}
+  authTestAuth:
+    handler: src/handler.authTestHandler
+    description: ${self:custom.application}(${self:service}) > handler for Custom Authoriser test
+    events:
+      - http:
+          path: auth-test
+          method: get
+          cors: true
+          authorizer:
+            name: 'basicUserAuthorizer'
+  authTestNoAuth:
+    handler: src/handler.authTestHandler
+    description: ${self:custom.application}(${self:service}) > handler for Custom Authoriser test (No Auth)
+    events:
+      - http:
+          path: no-auth-test
+          method: get
+          cors: true
 
 resources:
   Resources:

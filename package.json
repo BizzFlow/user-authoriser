@@ -37,6 +37,7 @@
     "lambda-tester": "^4.0.1",
     "mocha": "^7.1.2",
     "nyc": "^15.0.1",
+    "serverless-domain-manager": "^5.2.0",
     "serverless-dotenv-plugin": "^3.12.2",
     "serverless-offline": "^5.12.1",
     "serverless-plugin-typescript": "^1.1.9",
@@ -58,7 +59,7 @@
     "AWS Lambda"
   ],
   "author": "May",
-  "license": "ISC",
+  "license": "MIT",
   "bugs": {
     "url": "https://github.com/Q-Angelo/aws-node-typescript-rest-api/issues"
   },
