@@ -8,11 +8,12 @@
     "lint": "tslint -p tsconfig.json -c tslint.json",
     "prettier:fix": "prettier --write ./src",
     "sls:local": "serverless offline",
+    "test": "cross-env NODE_ENV=dev mocha -r ts-node/register tests/*.test.ts --exit",
+    "coverage": "nyc --reporter lcov npm run test",
     "sls:deploy": "serverless deploy",
     "sls:package": "serverless package",
     "sls:undeploy": "serverless remove",
-    "test": "cross-env NODE_ENV=dev mocha -r ts-node/register tests/*.test.ts --exit",
-    "coverage": "nyc --reporter lcov npm run test"
+    "sls:clean-deploy": "npm run sls:undeploy ; npm run sls:deploy"
   },
   "pre-commit": [
     "lint"

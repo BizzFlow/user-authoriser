@@ -1,10 +1,11 @@
 service: users-authoriser
 app: bizzflow
 frameworkVersion: "2"
-description: BizzFlow Lambda authorizer
 
 custom:
+  environment: ${env:NODE_ENV, 'dev'}
   application: BizzFlow
+  stage: ${self:provider.stage}
   customDomain:
       domainName: auth.bizzflow.link
       basePath: ${opt:stage, self:provider.stage}
@@ -14,18 +15,21 @@ custom:
 provider:
   name: aws
   runtime: nodejs14.x
+  description: BizzFlow Lambda authorizer
+
+  stage:  ${env:NODE_ENV, 'dev'}
+  region: ${env:REGION, 'eu-central-1'}
+
   lambdaHashingVersion: 20201221
   stackName: ${self:service}-${opt:stage, self:provider.stage}-stack 
   apiName: ${self:service}-${opt:stage, self:provider.stage}-api 
 
-  stage: dev
-  region: eu-central-1
-
   environment:
-    NODE_ENV: dev
-    SYSTEM: ${self:service}-${opt:stage, self:provider.stage}
-    USERS_TABLE: users-${opt:stage, self:provider.stage}
+    NODE_ENV: ${env:NODE_ENV}
+    SYSTEM: ${self:service}-${self:custom.environment}
+    USERS_TABLE: users-${self:custom.environment}
     API_GATEWAY: ${self:custom.application}-ApiGW
+    AWS_NODEJS_CONNECTION_REUSE_ENABLED: 1
 
   stackTags:
     service: ${self:service}
