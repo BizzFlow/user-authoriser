@@ -16,3 +16,5 @@ https://www.serverless.com/framework/docs/providers/aws/events/apigateway#share-
 https://scratchpad.blog/serverless/howto/configure-a-custom-domain-for-aws-api-gateway/
 
 https://www.serverless.com/blog/serverless-api-gateway-domain/
+
+https://medium.com/@jeandesravines/authentication-using-jwt-with-auth0-and-node-js-994e1e9353f1
