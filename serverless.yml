@@ -6,6 +6,8 @@ custom:
   environment: ${env:NODE_ENV, 'dev'}
   application: BizzFlow
   stage: ${self:provider.stage}
+  contactPoint: 'rsouza01@gmail.com'
+
   customDomain:
       domainName: auth.bizzflow.link
       basePath: ${opt:stage, self:provider.stage}
@@ -21,8 +23,8 @@ provider:
   region: ${env:REGION, 'eu-central-1'}
 
   lambdaHashingVersion: 20201221
-  stackName: ${self:service}-${opt:stage, self:provider.stage}-stack 
-  apiName: ${self:service}-${opt:stage, self:provider.stage}-api 
+  stackName: ${self:service}-${opt:stage, self:provider.stage}-stack
+  apiName: ${self:custom.application}(${self:service})
 
   environment:
     NODE_ENV: ${env:NODE_ENV}
@@ -52,7 +54,7 @@ package:
     - config/.env.dev
 
 functions:
-  basicUserAuthorizer:
+  authorizer:
     handler: src/handler.jwtAuth
   authTestAuth:
     handler: src/handler.authTestHandler
@@ -62,8 +64,12 @@ functions:
           path: auth-test
           method: get
           cors: true
+          # authorizer:
+          #   name: 'authorizer'
           authorizer:
-            name: 'basicUserAuthorizer'
+            type: COGNITO_USER_POOLS
+            authorizerId:
+              Ref: ApiGatewayAuthorizer
   authTestNoAuth:
     handler: src/handler.authTestHandler
     description: ${self:custom.application}(${self:service}) > handler for Custom Authoriser test (No Auth)
@@ -75,14 +81,80 @@ functions:
 
 resources:
   Resources:
-    BizzFlowApiGW:
-      Type: AWS::ApiGateway::RestApi
+    LambdaInvokePolicy:
+      Type: "AWS::IAM::ManagedPolicy"
       Properties:
-        Name: BizzFlowApiGW
+        Description: "Policy for allowing Lambda Invoke"
+        Path: "/"
+        PolicyDocument:
+          Version: "2012-10-17"
+          Statement:
+            - Effect: Allow
+              Action:
+                - "lambda:InvokeFunction"
+              Resource: "*"
+    AuthorizerInvokeRole:
+      Type: "AWS::IAM::Role"
+      Properties:
+        Path: "/"
+        AssumeRolePolicyDocument:
+          Version: "2012-10-17"
+          Statement:
+            - Effect: "Allow"
+              Principal:
+                Service:
+                  - "apigateway.amazonaws.com"
+              Action:
+                - "sts:AssumeRole"
+        ManagedPolicyArns:
+          - Ref: LambdaInvokePolicy
+
+    CognitoUserPool:
+      Type: "AWS::Cognito::UserPool"
+      Properties:
+        MfaConfiguration: OFF
+        UserPoolName: ${self:service}-${opt:stage, self:provider.stage}-user-pool
+        UsernameAttributes:
+          - email
+        Policies:
+          PasswordPolicy:
+            MinimumLength: 6
+            RequireLowercase: False
+            RequireNumbers: True
+            RequireSymbols: False
+            RequireUppercase: True
+
+    CognitoUserPoolClient:
+      Type: "AWS::Cognito::UserPoolClient"
+      Properties:
+        ClientName: ${self:service}-${opt:stage, self:provider.stage}-pool-client
+        GenerateSecret: False
+        UserPoolId:
+          Ref: CognitoUserPool
+
+    ApiGatewayAuthorizer:
+      DependsOn:
+        - ApiGatewayRestApi
+      Type: AWS::ApiGateway::Authorizer
+      Properties:
+        Name: ${self:service}-${opt:stage, self:provider.stage}-cognito-authorizer
+        IdentitySource: method.request.header.Authorization
+        RestApiId:
+          Ref: ApiGatewayRestApi
+        Type: COGNITO_USER_POOLS
+        ProviderARNs:
+          - Fn::GetAtt: [CognitoUserPool, Arn]
 
   Outputs:
-    ApiGatewayRestApiId:
+    AuthorizerLambdaARN:
+      Description: 'Custom Auth Lambda ARN'
       Value:
-        Ref: BizzFlowApiGW
+        'Fn::GetAtt': [AuthorizerLambdaFunction, Arn]
       Export:
-        Name: BizzFlowApiGateway-restApiId-${opt:stage, self:provider.stage}
+        Name: ${self:service}-LambdaARN-${self:provider.stage}
+    AuthorizerLambdaRoleARN:
+      Description: Custom Authorizer Invoke Role ARN
+      Value:
+        'Fn::GetAtt': [AuthorizerInvokeRole, Arn]
+      Export:
+        Name: ${self:service}-InvokeLambdaRoleARN-${self:provider.stage}
